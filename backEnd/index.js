@@ -19,6 +19,17 @@ const jwt = require('jsonwebtoken');
 const { authenticateToken } = require('./utilities.js');
 
 app.use(express.json());
+
+// const corsOptions = {
+//   origin: '*', 
+//   methods: 'GET,POST,PUT,DELETE,OPTIONS',
+//   allowedHeaders: 'Content-Type, Authorization',
+//   optionsSuccessStatus: 200
+// };
+// app.use(cors(corsOptions));
+
+// app.options('*', cors(corsOptions)); 
+
 app.use(
     cors({
         origin: '*'
@@ -73,38 +84,43 @@ app.post('/create-account',async(req,res)=>{
     });
 });
 // Log-in
-app.post('/login', async (req,res)=>{
-    const { email, password} = req.body;
-    if(!email){
-        return res.status(400).json({ message: 'Password is required'})
-    }
-    if(!password){
-        return res.status(400).json({ message: 'Password is required'})
-    }
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
 
-    const userInfo = await User.findOne({ email : email});
-    if(!userInfo){
-        return res.status(400).json({ message: 'User not found'})
-    }
-    if(!userInfo.email == email && userInfo.password == password){
-        const user = { user : userInfo};
-        const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET,{
-            expiresIn: '36000m'
-        });
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
 
-        return res.json({
-            error:false,
-            message: 'LOGIN SUCCESS',
-            email,
-            accessToken
-        });
-    }else {
-        return res.status(400).json({
-            errorLtrue,
-            message:'Invalid Credentials'
-        })
-    }
-})
+  if (!password) {
+    return res.status(400).json({ message: "Password is required" });
+  }
+
+  // mongoose model named User
+  const userInfo = await User.findOne({ email: email });
+
+  if (!userInfo) {
+    return res.status(400).json({ message: "User not found" });
+  }
+
+  if (userInfo.email == email && userInfo.password == password) {
+    const user = { user: userInfo };
+    const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+      expiresIn: "36000m",
+    });
+
+    return res.json({
+      error: false,
+      message: "Login Successful",
+      email,
+      accessToken,
+    });
+  } else {
+    return res.status(400).json({
+      error: true,
+      message: "Invalid Credentials",
+    });
+  }
+});
 app.get('/get-user', authenticateToken, async (req,res)=>{
     const { user } = req.user;
     const isUser = await User.findOne({_id: user._id});
